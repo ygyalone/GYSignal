@@ -1,0 +1,16 @@
+PODS:
+  - GYSignal (0.1.0)
+
+DEPENDENCIES:
+  - GYSignal (from `../`)
+
+EXTERNAL SOURCES:
+  GYSignal:
+    :path: "../"
+
+SPEC CHECKSUMS:
+  GYSignal: d53ac58f808636b12b2b5ecaef8e06f510c4edf2
+
+PODFILE CHECKSUM: 9a00266d4e015ce535b426ed345ef48b88300311
+
+COCOAPODS: 1.5.3
