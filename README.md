@@ -5,6 +5,9 @@
 [![License](https://img.shields.io/cocoapods/l/GYSignal.svg?style=flat)](https://cocoapods.org/pods/GYSignal)
 [![Platform](https://img.shields.io/cocoapods/p/GYSignal.svg?style=flat)](https://cocoapods.org/pods/GYSignal)
 
+## Introduction
+iOS平台下的响应式编程支持,文档待补充...
+
 ## Example
 
 To run the example project, clone the repo, and run `pod install` from the Example directory first.
