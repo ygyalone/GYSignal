@@ -1,0 +1,11 @@
+use_frameworks!
+
+target 'GYSignal_Example' do
+  pod 'GYSignal', :path => '../'
+
+  target 'GYSignal_Tests' do
+    inherit! :search_paths
+
+    
+  end
+end
