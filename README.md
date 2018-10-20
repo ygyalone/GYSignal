@@ -108,7 +108,7 @@ GYSignal是iOS平台下对响应式编程的支持,文档补充中...
 > 参考zip
 
 ```objc
-[signal1 zipWith:signal2]
+[signal1 zipWith:signal2];
 ```
 <br/>
 
@@ -121,7 +121,7 @@ GYSignal是iOS平台下对响应式编程的支持,文档补充中...
 > onComplete:当组合的信号发送完成时，订阅者会收到完成。
 
 ```objc
-[signal1 merge:@[signal2, signal3]]
+[signal1 merge:@[signal2, signal3]];
 ```
 <br/>
 
