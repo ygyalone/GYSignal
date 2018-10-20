@@ -200,6 +200,45 @@ const id GYSignalNilFlag = @__FILE__;
     }];
 }
 
+- (GYSignal *)flattenMap:(GYSignal *(^)(id))block {
+    NSAssert(block!=nil, @"<GYSignalError: flattenMap block cant be nil!>");
+    return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
+        
+        __block GYSignalDisposer *innerSignalDisposer = nil;
+        NSMutableArray *disposers = [NSMutableArray array];
+        GYSignalDisposer *disposer =
+        [self subscribeValue:^(id value) {
+            
+            GYSignal *flattenMapSignal = block(value);
+            innerSignalDisposer =
+            [flattenMapSignal subscribeValue:^(id value) {
+                [subscriber sendValue:value];
+            } error:^(NSError *error) {
+                [subscriber sendError:error];
+            } complete:^{
+                [subscriber sendComplete];
+            }];
+            
+        } error:^(NSError *error) {
+            [subscriber sendError:error];
+        } complete:^{
+            [subscriber sendComplete];
+        }];
+        
+        [disposers addObject:disposer];
+        if (innerSignalDisposer) {
+            [disposers addObject:innerSignalDisposer];
+        }
+        
+        return [GYSignalDisposer disposerWithAction:^{
+            for (GYSignalDisposer *disposer in disposers) {
+                [disposer dispose];
+            }
+        }];
+        
+    }];
+}
+
 - (instancetype)skip:(NSUInteger)skipCount {
     __block NSUInteger count = 0;
     return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
@@ -255,12 +294,15 @@ const id GYSignalNilFlag = @__FILE__;
     }];
 }
 
-- (instancetype)mergeWith:(GYSignal *)signal {
-    NSAssert(signal != nil, @"merged signal cant be nil!");
+- (instancetype)merge:(NSArray *)signals {
+    NSAssert(signals != nil, @"merged signals cant be nil!");
     return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
         
         NSMutableArray *disposers = [NSMutableArray array];
-        for (GYSignal *s in @[self, signal]) {
+        NSMutableArray *mergedSignals = @[self].mutableCopy;
+        [mergedSignals addObjectsFromArray:signals];
+        
+        for (GYSignal *s in mergedSignals) {
             GYSignalDisposer *disposer =
             [s subscribeValue:^(id value) {
                 [subscriber sendValue:value];
@@ -276,6 +318,25 @@ const id GYSignalNilFlag = @__FILE__;
             for (GYSignalDisposer *disposer in disposers) {
                 [disposer dispose];
             }
+        }];
+    }];
+}
+
+- (instancetype)mergeWith:(GYSignal *)signal {
+    NSAssert(signal != nil, @"merged signal cant be nil!");
+    return [self merge:@[signal]];
+}
+
+- (instancetype)finally:(void (^)(void))block {
+    return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
+        return [self subscribeValue:^(id value) {
+            [subscriber sendValue:value];
+        } error:^(NSError *error) {
+            [subscriber sendError:error];
+            if (block) { block(); }
+        } complete:^{
+            [subscriber sendComplete];
+            if (block) { block(); }
         }];
     }];
 }
@@ -333,6 +394,7 @@ const id GYSignalNilFlag = @__FILE__;
 }
 
 - (GYSignal<GYTuple *> *)zipWith:(nonnull GYSignal *)signal {
+    NSAssert(signal != nil, @"ziped signal cant be nil!");
     return [self zip:@[signal]];
 }
 

@@ -27,6 +27,7 @@
     }];
     
     XCTestExpectation *expectation = [self expectationWithDescription:@"value block not executed!"];
+    
     [signal subscribeValue:^(id value) {
         XCTAssert([value isEqual:@"hello"], @"send value failed!");
         [expectation fulfill];
@@ -47,6 +48,7 @@
     }];
     
     XCTestExpectation *expectation = [self expectationWithDescription:@"complete block not executed!"];
+    
     [signal subscribeComplete:^{
         [expectation fulfill];
     }];
@@ -120,6 +122,41 @@
 }
 
 
+- (void)test_merge {
+    GYSignal *signal1 = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
+        [subscriber sendValue:@"1"];
+        return [GYSignalDisposer disposerWithAction:^{
+            NSLog(@"signal disposed");
+        }];
+    }];
+    
+    GYSignal *signal2 = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
+        [subscriber sendValue:@"2"];
+        return [GYSignalDisposer disposerWithAction:^{
+            NSLog(@"signal disposed");
+        }];
+    }];
+    
+    GYSignal *signal3 = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
+        [subscriber sendValue:@"3"];
+        return [GYSignalDisposer disposerWithAction:^{
+            NSLog(@"signal disposed");
+        }];
+    }];
+    
+    NSMutableArray *recivedValues = @[].mutableCopy;
+    [[signal1 merge:@[signal2, signal3]] subscribeValue:^(id value) {
+        [recivedValues addObject:value];
+    }];
+    
+    BOOL valid = [recivedValues containsObject:@"1"] &&
+    [recivedValues containsObject:@"2"] &&
+    [recivedValues containsObject:@"3"];
+    
+    XCTAssert(valid, @"test_merge failed!");
+}
+
+
 - (void)test_mergeWith {
     GYSignal *signal1 = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
         [subscriber sendValue:@"1"];
@@ -141,8 +178,32 @@
     }];
     
     BOOL valid = [recivedValues containsObject:@"1"] && [recivedValues containsObject:@"2"];
-    XCTAssert(valid, @"test_skip failed!");
+    XCTAssert(valid, @"test_mergeWith failed!");
     
+}
+
+- (void)test_finally {
+    GYSignal *signal = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
+        [subscriber sendValue:@"1"];
+        [subscriber sendComplete];
+        return [GYSignalDisposer disposerWithAction:^{
+            NSLog(@"signal disposed");
+        }];
+    }];
+    
+    XCTestExpectation *expectation = [self expectationWithDescription:@"test_finally failed!"];
+    
+    [[signal finally:^{
+        [expectation fulfill];
+    }] subscribeValue:^(id value) {
+        //do nothing
+    } complete:^{
+        //do nothing
+    }];
+    
+    [self waitForExpectationsWithTimeout:0.1 handler:^(NSError * _Nullable error) {
+        XCTAssertNil(error, @"%@", error);
+    }];
 }
 
 
@@ -159,6 +220,28 @@
     }] subscribeValue:^(id value) {
         BOOL isEqual = [[value objectForKey:@"key"] isEqual:@"1"];
         XCTAssert(isEqual, @"test_map failed!");
+    }];
+}
+
+- (void)test_flattenMap {
+    GYSignal *signal = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
+        [subscriber sendValue:@"1"];
+        return [GYSignalDisposer disposerWithAction:^{
+            NSLog(@"signal disposed");
+        }];
+    }];
+    
+    GYSignal *innerSignal = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
+        [subscriber sendValue:@"newValue"];
+        return [GYSignalDisposer disposerWithAction:^{
+            NSLog(@"signal disposed");
+        }];
+    }];
+    
+    [[signal flattenMap:^GYSignal *(id value) {
+        return innerSignal;
+    }] subscribeValue:^(id value) {
+        XCTAssertEqual(value, @"newValue", @"test_flattenMap failed!");
     }];
 }
 
