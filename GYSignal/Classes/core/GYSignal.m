@@ -322,11 +322,6 @@ const id GYSignalNilFlag = @__FILE__;
     }];
 }
 
-- (instancetype)mergeWith:(GYSignal *)signal {
-    NSAssert(signal != nil, @"merged signal cant be nil!");
-    return [self merge:@[signal]];
-}
-
 - (instancetype)finally:(void (^)(void))block {
     return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
         return [self subscribeValue:^(id value) {
@@ -391,11 +386,6 @@ const id GYSignalNilFlag = @__FILE__;
             }
         }];
     }];
-}
-
-- (GYSignal<GYTuple *> *)zipWith:(nonnull GYSignal *)signal {
-    NSAssert(signal != nil, @"ziped signal cant be nil!");
-    return [self zip:@[signal]];
 }
 
 @end

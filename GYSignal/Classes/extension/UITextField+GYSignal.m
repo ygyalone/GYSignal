@@ -34,7 +34,7 @@
         return [GYSignalDisposer disposerWithAction:^{
             [[weak_self gy_subscriberBag] removeObject:subscriber];
         }];
-    }] mergeWith:GYObserve(self, text)];
+    }] merge:@[GYObserve(self, text)]];
 }
 
 - (void)gy_textDidChangeAction {

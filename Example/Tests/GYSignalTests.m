@@ -157,31 +157,6 @@
 }
 
 
-- (void)test_mergeWith {
-    GYSignal *signal1 = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
-        [subscriber sendValue:@"1"];
-        return [GYSignalDisposer disposerWithAction:^{
-            NSLog(@"signal disposed");
-        }];
-    }];
-    
-    GYSignal *signal2 = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
-        [subscriber sendValue:@"2"];
-        return [GYSignalDisposer disposerWithAction:^{
-            NSLog(@"signal disposed");
-        }];
-    }];
-    
-    NSMutableArray *recivedValues = @[].mutableCopy;
-    [[signal1 mergeWith:signal2] subscribeValue:^(id value) {
-        [recivedValues addObject:value];
-    }];
-    
-    BOOL valid = [recivedValues containsObject:@"1"] && [recivedValues containsObject:@"2"];
-    XCTAssert(valid, @"test_mergeWith failed!");
-    
-}
-
 - (void)test_finally {
     GYSignal *signal = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
         [subscriber sendValue:@"1"];
@@ -291,34 +266,11 @@
 }
 
 
-- (void)test_zipWith {
-    GYSignal *signal1 = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
-        [subscriber sendValue:@"1"];
-        [subscriber sendComplete];
-        return [GYSignalDisposer disposerWithAction:^{
-            NSLog(@"signal disposed");
-        }];
-    }];
-    
-    GYSignal *signal2 = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
-        [subscriber sendValue:@"2"];
-        return [GYSignalDisposer disposerWithAction:^{
-            NSLog(@"signal disposed");
-        }];
-    }];
-    
-    [[signal1 zipWith:signal2] subscribeValue:^(GYTuple *value) {
-        BOOL valid = [value[0] isEqual:@"1"] && [value[1] isEqual:@"2"];
-        XCTAssert(valid, @"test_zip failed!");
-    }];
-}
-
-
 #pragma mark - extension tests
 - (void)test_kvo {
     GYSignal *stringSignal = [GYObserve(self, aString) skip:1];//忽略初始值
     GYSignal *numberSignal = [GYObserve(self, aNumber) skip:1];//忽略初始值
-    [[stringSignal zipWith:numberSignal] subscribeValue:^(GYTuple *value) {
+    [[stringSignal zip:@[numberSignal]] subscribeValue:^(GYTuple *value) {
         BOOL valid = [value[0] isEqual:@"hello"] && [value[1] isEqual:@(666)];
         XCTAssert(valid, @"test_kvo failed!");
     }];
@@ -336,6 +288,4 @@
     textField.text = @"hello";
 }
 
-
 @end
-
