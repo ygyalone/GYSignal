@@ -73,7 +73,6 @@ GYSignal是iOS平台下对响应式编程的支持,文档补充中...
 
 **map(值映射):**
 
-
 > OnValue:当原信号发送值时，订阅者会收到映射之后的值。</br>
 > OnError:当原信号发送失败时，订阅者会收到失败。</br>
 > OnComplete:当原信号发送完成时，订阅者会收到完成。
@@ -84,6 +83,7 @@ GYSignal是iOS平台下对响应式编程的支持,文档补充中...
 }];
 ```
 </br>
+
 **flattenMap(平铺映射，返回信号的信号):**
 
 > OnValue:当原信号发送值时，订阅者会去订阅信号映射返回的信号。</br>
@@ -96,6 +96,7 @@ GYSignal是iOS平台下对响应式编程的支持,文档补充中...
 }];
 ```
 </br>
+
 **finally(当error或者complete之后执行):**
 
 > OnValue:当原信号发送值时，订阅者会收到值。</br>
@@ -108,6 +109,7 @@ GYSignal是iOS平台下对响应式编程的支持,文档补充中...
 }];
 ```
 </br>
+
 **diffrent(当value值与上一次触发不同时才触发新的value回调):**
 
 > OnValue:当原信号发送的值和上次不同时，订阅者才会收到值。</br>
@@ -118,6 +120,7 @@ GYSignal是iOS平台下对响应式编程的支持,文档补充中...
 [signal diffrent];
 ```
 </br>
+
 **skip(指定值忽略次数):**
 
 > OnValue:当原信号发送的值超过忽略次数后，订阅者才会收到值。</br>
@@ -128,6 +131,7 @@ GYSignal是iOS平台下对响应式编程的支持,文档补充中...
 [signal skip:1];
 ```
 <br/>
+
 **then(当原信号执行完毕才会订阅下一个信号):**
 
 > OnValue:当原信号发送值时，订阅者不会收到值。</br>
@@ -138,6 +142,7 @@ GYSignal是iOS平台下对响应式编程的支持,文档补充中...
 [signal1 then:signal2];
 ```
 <br/>
+
 **zip(信号打包):**
 
 > OnValue:只有打包的信号中都至少发送过一次值，新的信号才会发送值，并且订阅者收到的值是一个元组对象，可以根据打包时的顺序在元组中取值。</br>
@@ -148,6 +153,7 @@ GYSignal是iOS平台下对响应式编程的支持,文档补充中...
 [signal1 zip:@[signal2]];
 ```
 <br/>
+
 **merge(信号组合):**
 
 > OnValue:当组合的信号发送值时，订阅者会收到值。</br>
@@ -158,6 +164,7 @@ GYSignal是iOS平台下对响应式编程的支持,文档补充中...
 [signal1 merge:@[signal2, signal3]];
 ```
 <br/>
+
 **kvo(观察者模式，信号绑定):**
 
 ```objc
@@ -165,6 +172,7 @@ GYSignal是iOS平台下对响应式编程的支持,文档补充中...
 GYObserve(self, aString);//宏的便利写法
 ```
 <br/>
+
 **UITextField对text属性的kvo支持:**
 
 ```objc
