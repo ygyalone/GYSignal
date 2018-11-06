@@ -18,12 +18,12 @@ GYSignal是iOS平台下对响应式编程的支持,文档补充中...
 ```objc
 //监听order的purchaseNum属性
 [[order gy_signalForKeyPath:@"purchaseNum"] subscribeValue:^(id value) {
-NSLog(@"value=%@",value);
+    NSLog(@"value=%@",value);
 }];
 
 //OC中宏的便利写法
 [GYObserve(order, purchaseNum) subscribeValue:^(id value) {
-NSLog(@"value=%@",value);
+    NSLog(@"value=%@",value);
 }];
 ```
 <br/>
@@ -35,11 +35,11 @@ NSLog(@"value=%@",value);
 
 **代码举例:**
 
-```
+```objc
 [[[requestA zip:@[requestB]] flattenMap:^GYSignal *(GYTuple *value) {
-return requestC;
+    return requestC;
 }] subscribeValue:^(id value) {
-NSLog(@"value=%@",value);
+    NSLog(@"value=%@",value);
 }];
 ```
 </br>
