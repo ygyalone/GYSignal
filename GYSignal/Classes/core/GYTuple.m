@@ -45,7 +45,6 @@ const id GYTupleEndFlag = @__FILE__;
 
 #pragma mark - public method
 + (instancetype)tupleWithObjects:(id)first, ... {
-    
     NSMutableArray *arguments = [NSMutableArray array];
     
     va_list args;
@@ -63,6 +62,16 @@ const id GYTupleEndFlag = @__FILE__;
 + (instancetype)tupleWithObjectsFromArray:(NSArray *)objs {
     GYTuple *tuple = [GYTuple new];
     tuple.args = objs.mutableCopy;
+    return tuple;
+}
+
++ (instancetype)tupleWithSize:(NSUInteger)size {
+    GYTuple *tuple = [GYTuple new];
+    NSMutableArray *args = [NSMutableArray arrayWithCapacity:size];
+    for (int i = 0; i < size; i++) {
+        args[i] = _GYTupleNil.tupleNil;
+    }
+    tuple.args = args.mutableCopy;
     return tuple;
 }
 
@@ -86,8 +95,8 @@ const id GYTupleEndFlag = @__FILE__;
     _args[index] = obj?:_GYTupleNil.tupleNil;
 }
 
-- (BOOL)containsObject:(id)object {
-    return [self.args containsObject:object];
+- (BOOL)contains:(id)obj {
+    return [self.args containsObject:obj?:_GYTupleNil.tupleNil];
 }
 
 - (id)first {

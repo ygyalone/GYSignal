@@ -337,18 +337,15 @@ const id GYSignalNilFlag = @__FILE__;
 }
 
 - (GYSignal<GYTuple *> *)zip:(NSArray<GYSignal *> *)signals {
-    
     NSMutableArray *zip = [NSMutableArray array];
     [zip addObject:self];
-    if (signals) {[zip addObjectsFromArray:signals];}
     
-    NSMutableArray *values = [NSMutableArray array];
-    __block NSInteger wait = zip.count;
-    for (int i = 0; i < zip.count; i++) {
-        [values addObject:GYSignalNilFlag];
+    if (signals) {
+        [zip addObjectsFromArray:signals];
     }
-    GYTuple *valueTuple = [GYTuple tupleWithObjectsFromArray:values];
     
+    __block NSInteger wait = zip.count;
+    GYTuple *values = [GYTuple tupleWithSize:zip.count];
     NSMutableArray<GYSignalDisposer *> *disposers = [NSMutableArray array];
     
     return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
@@ -358,11 +355,11 @@ const id GYSignalNilFlag = @__FILE__;
             GYSignalDisposer *disposer =
             [signal subscribeValue:^(id value) {
                 @synchronized(self) {
-                    valueTuple[[zip indexOfObject:signal]] = value;
+                    values[[zip indexOfObject:signal]] = value;
                 }
                 
-                if (![valueTuple containsObject:GYSignalNilFlag]) {
-                    [subscriber sendValue:valueTuple];
+                if (![values contains:nil]) {
+                    [subscriber sendValue:values];
                 }
                 
             } error:^(NSError *error) {

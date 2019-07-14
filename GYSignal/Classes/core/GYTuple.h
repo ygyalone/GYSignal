@@ -34,8 +34,9 @@ extern const id GYTupleEndFlag;
  */
 + (instancetype)tupleWithObjects:(id)first, ...;
 + (instancetype)tupleWithObjectsFromArray:(NSArray *)objs;
++ (instancetype)tupleWithSize:(NSUInteger)size;
 - (id)objectAtIndex:(NSUInteger)index;
 - (id)objectAtIndexedSubscript:(NSUInteger)index;
 - (void)setObject:(id)obj atIndexedSubscript:(NSUInteger)index;
-- (BOOL)containsObject:(id)object;
+- (BOOL)contains:(id)obj;
 @end

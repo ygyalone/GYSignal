@@ -8,6 +8,7 @@
 
 /* Begin PBXBuildFile section */
 		3AD759068B734EC7719DC798 /* Pods_GYSignal_Example.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6B3DFC4E89B3B35665E10471 /* Pods_GYSignal_Example.framework */; };
+		5A210DD722DAE5C10026E1A4 /* GYTupleTests.m in Sources */ = {isa = PBXBuildFile; fileRef = 5A210DD622DAE5C10026E1A4 /* GYTupleTests.m */; };
 		6003F58E195388D20070C39A /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F58D195388D20070C39A /* Foundation.framework */; };
 		6003F590195388D20070C39A /* CoreGraphics.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F58F195388D20070C39A /* CoreGraphics.framework */; };
 		6003F592195388D20070C39A /* UIKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 6003F591195388D20070C39A /* UIKit.framework */; };
@@ -39,6 +40,7 @@
 /* Begin PBXFileReference section */
 		1835401F7BDFE2287E4D38CA /* LICENSE */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text; name = LICENSE; path = ../LICENSE; sourceTree = "<group>"; };
 		2814AF44DDBB3514DA018092 /* Pods-GYSignal_Example.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-GYSignal_Example.release.xcconfig"; path = "Pods/Target Support Files/Pods-GYSignal_Example/Pods-GYSignal_Example.release.xcconfig"; sourceTree = "<group>"; };
+		5A210DD622DAE5C10026E1A4 /* GYTupleTests.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GYTupleTests.m; sourceTree = "<group>"; };
 		6003F58A195388D20070C39A /* GYSignal_Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GYSignal_Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		6003F58D195388D20070C39A /* Foundation.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Foundation.framework; path = System/Library/Frameworks/Foundation.framework; sourceTree = SDKROOT; };
 		6003F58F195388D20070C39A /* CoreGraphics.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = CoreGraphics.framework; path = System/Library/Frameworks/CoreGraphics.framework; sourceTree = SDKROOT; };
@@ -171,6 +173,7 @@
 			isa = PBXGroup;
 			children = (
 				6003F5BB195388D20070C39A /* GYSignalTests.m */,
+				5A210DD622DAE5C10026E1A4 /* GYTupleTests.m */,
 				6003F5B6195388D20070C39A /* Supporting Files */,
 			);
 			path = Tests;
@@ -365,6 +368,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5A210DD722DAE5C10026E1A4 /* GYTupleTests.m in Sources */,
 				6003F5BC195388D20070C39A /* GYSignalTests.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
