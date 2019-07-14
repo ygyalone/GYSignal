@@ -13,10 +13,10 @@ const id GYSignalNilFlag = @__FILE__;
 
 #pragma mark - GYSubscriber
 @interface _GYSubscriber : NSObject <GYSubscriber>
-@property (nonatomic, assign) BOOL enabled;
 @property (nonatomic, copy) void(^valueBlock)(id);
 @property (nonatomic, copy) void(^errorBlock)(NSError *);
 @property (nonatomic, copy) void(^completeBlock)(void);
+@property (nonatomic, strong) GYSignalDisposer *disposer;
 
 + (instancetype)subscriberWithValue:(void(^)(id))valueBlock
                               error:(void(^)(NSError *))errorBlock
@@ -34,41 +34,42 @@ const id GYSignalNilFlag = @__FILE__;
     return subscriber;
 }
 
-- (instancetype)init {
-    if (self = [super init]) {
-        self.enabled = YES;
-    }
-    return self;
-}
-
-- (void)setEnabled:(BOOL)enabled {
-    _enabled = enabled;
-    if (_enabled == NO) {
-        _valueBlock = nil;
-        _errorBlock = nil;
-        _completeBlock = nil;
-    }
+- (void)dispose {
+    _valueBlock = nil;
+    _errorBlock = nil;
+    _completeBlock = nil;
 }
 
 - (void)sendValue:(id)value {
-    if (_valueBlock) {_valueBlock(value);}
+    if (_valueBlock) {
+        _valueBlock(value);
+    }
 }
 
 - (void)sendComplete {
-    if (_completeBlock) {_completeBlock();}
-    self.enabled = NO;
+    if (_completeBlock) {
+        _completeBlock();
+    }
+    [self dispose];
 }
 
 - (void)sendError:(NSError *)error {
-    if (_errorBlock) {_errorBlock(error);}
-    self.enabled = NO;
+    if (_errorBlock) {
+        _errorBlock(error);
+    }
+    [self dispose];
+}
+
+- (void)dealloc {
+    if (_disposer) {
+        [_disposer dispose];
+    }
 }
 
 @end
 
 #pragma mark - GYSignalDisposer
 @interface GYSignalDisposer()
-@property (nonatomic, weak) _GYSubscriber *subscriber;
 @property (nonatomic, assign, getter=isDisposed) BOOL disposed;
 @property (nonatomic, copy) void(^whenDispose)(void);
 @end
@@ -88,14 +89,12 @@ const id GYSignalNilFlag = @__FILE__;
 }
 
 - (void)dispose {
-    if (_whenDispose) {
+    if (!_disposed && _whenDispose) {
         _whenDispose();
         _whenDispose = nil;
     }
     
     _disposed = YES;
-    _subscriber.enabled = NO;
-    _subscriber = nil;
 }
 
 @end
@@ -154,11 +153,14 @@ const id GYSignalNilFlag = @__FILE__;
 - (GYSignalDisposer *)_subscribeValue:(void(^)(id value))valueBlock
                                error:(void(^)(NSError *error))errorBlock
                             complete:(void(^)(void))completeBlock {
-    
     _GYSubscriber *subscriber = [_GYSubscriber subscriberWithValue:valueBlock error:errorBlock complete:completeBlock];
     GYSignalDisposer *disposer = self.actionBlock(subscriber);
-    disposer.subscriber = subscriber;
-    return disposer;
+    __weak typeof(subscriber) weak_subscriber = subscriber;
+    subscriber.disposer = [GYSignalDisposer disposerWithAction:^{
+        [disposer dispose];
+        [weak_subscriber dispose];
+    }];
+    return subscriber.disposer;
 }
 
 #pragma mark - options
@@ -247,7 +249,9 @@ const id GYSignalNilFlag = @__FILE__;
             if (count >= skipCount) {
                 [subscriber sendValue:value];
             }else {
-                count++;
+                @synchronized (self) {
+                    count++;
+                }
             }
             
         } error:^(NSError *error) {

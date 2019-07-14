@@ -265,6 +265,40 @@
     }];
 }
 
+- (void)test_dispose {
+    XCTestExpectation *expectation = [self expectationWithDescription:@"dispose block not executed!"];
+    GYSignal *signal = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
+        return [GYSignalDisposer disposerWithAction:^{
+            [expectation fulfill];
+        }];
+    }];
+    
+    [[signal subscribeComplete:nil] dispose];
+    
+    [self waitForExpectationsWithTimeout:0.1 handler:^(NSError * _Nullable error) {
+        XCTAssertNil(error, @"%@", error);
+    }];
+}
+
+- (void)test_disposeWhenSubscriberDealloced {
+    XCTestExpectation *expectation = [self expectationWithDescription:@"dispose block not executed!"];
+    GYSignal *signal = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
+        return [GYSignalDisposer disposerWithAction:^{
+            [expectation fulfill];
+        }];
+    }];
+    
+    @autoreleasepool {
+        [signal subscribeComplete:^{
+            //nothing to do
+        }];
+    }
+    
+    [self waitForExpectationsWithTimeout:0.1 handler:^(NSError * _Nullable error) {
+        XCTAssertNil(error, @"%@", error);
+    }];
+}
+
 
 #pragma mark - extension tests
 - (void)test_kvo {

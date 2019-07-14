@@ -13,7 +13,6 @@ extern const id GYTupleEndFlag;
 
 #define GYTupleCreate(...) [GYTuple tupleWithObjects:__VA_ARGS__, GYTupleEndFlag]
 
-//元组模型,用于保存方法参数
 @interface GYTuple : NSObject
 
 @property (nonatomic, readonly) NSArray *args;
@@ -35,8 +34,8 @@ extern const id GYTupleEndFlag;
 + (instancetype)tupleWithObjects:(id)first, ...;
 + (instancetype)tupleWithObjectsFromArray:(NSArray *)objs;
 + (instancetype)tupleWithSize:(NSUInteger)size;
-- (id)objectAtIndex:(NSUInteger)index;
-- (id)objectAtIndexedSubscript:(NSUInteger)index;
-- (void)setObject:(id)obj atIndexedSubscript:(NSUInteger)index;
-- (BOOL)contains:(id)obj;
+- (nullable id)objectAtIndex:(NSUInteger)index;
+- (nullable id)objectAtIndexedSubscript:(NSUInteger)index;
+- (void)setObject:(nullable id)obj atIndexedSubscript:(NSUInteger)index;
+- (BOOL)contains:(nullable id)obj;
 @end
