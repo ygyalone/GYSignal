@@ -59,13 +59,13 @@ GYSignal是iOS平台下对响应式编程的支持,文档补充中...
 关于内存引用关系:</br> 待补充...</br>
 
 关于内存泄漏:</br>
-由于闭包是引用类型，同时响应式编程很多操作都是放在闭包里面，所以很容易产生循环引用，导致内存泄漏问题。当然，没有循环引用是不需要考虑这个问题的。</br>
-在OC中可以使用**weak**, **assign**, **unsafe_unretained**来解除循环引用链。</br>
-在Swift中可以通过在闭包的**值引用列表**中表明引用关系**weak**，**unowned**来解除循环引用链表。
+由于闭包是引用类型，同时响应式编程很多操作都是放在闭包里面，所以很容易产生循环引用，导致内存泄漏的问题。</br>
+在OC中可以使用**weak**, **assign**, **unsafe_unretained**来打破循环引用。</br>
+在Swift中可以通过在闭包的**值引用列表**中表明引用关系**weak**或者**unowned**来打破循环引用。
 
 
 ## 关于Swift
-注意：数据绑定操作只能是NSObject的子类，因为数据绑定用到了OC的runtime方法。
+注意：因为数据绑定内部实现使用了OC的runtime和KVO。所以在Swift中数据绑定操作只能作用于NSObject的子类。
 
 ## 信号操作
 
@@ -177,9 +177,6 @@ GYObserve(self, aString);//宏的便利写法
 textField.gy_textSignal;
 ```
 <br/>
-
-## 补充
-GYSignal是怎么产生的呢？因为我之前使用过ReactiveCocoa(iOS平台下的一个响应式编程框架)，当然是模仿的咯，哈哈..
 
 ## Author
 
