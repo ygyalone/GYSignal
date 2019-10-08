@@ -396,8 +396,12 @@ const id GYSignalNilFlag = @__FILE__;
     
     __block NSInteger wait = zip.count;
     GYTuple *values = [GYTuple tupleWithSize:zip.count];
-    NSMutableArray<GYSignalDisposer *> *disposers = [NSMutableArray array];
+    id placeholder = GYSignalNilFlag;
+    for (int i = 0; i < values.count; i++) {
+        values[i] = placeholder;
+    }
     
+    NSMutableArray<GYSignalDisposer *> *disposers = [NSMutableArray array];
     return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
         
         for (GYSignal *signal in zip) {
@@ -406,7 +410,7 @@ const id GYSignalNilFlag = @__FILE__;
                     values[[zip indexOfObject:signal]] = value;
                 }
                 
-                if (![values contains:nil]) {
+                if (![values contains:placeholder]) {
                     [subscriber sendValue:values];
                 }
                 
