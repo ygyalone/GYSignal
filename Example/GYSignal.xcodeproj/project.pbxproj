@@ -257,7 +257,7 @@
 			};
 			buildConfigurationList = 6003F585195388D10070C39A /* Build configuration list for PBXProject "GYSignal" */;
 			compatibilityVersion = "Xcode 3.2";
-			developmentRegion = English;
+			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
@@ -339,7 +339,7 @@
 			files = (
 			);
 			inputPaths = (
-				"${SRCROOT}/Pods/Target Support Files/Pods-GYSignal_Example/Pods-GYSignal_Example-frameworks.sh",
+				"${PODS_ROOT}/Target Support Files/Pods-GYSignal_Example/Pods-GYSignal_Example-frameworks.sh",
 				"${BUILT_PRODUCTS_DIR}/GYSignal/GYSignal.framework",
 			);
 			name = "[CP] Embed Pods Frameworks";
@@ -348,7 +348,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${SRCROOT}/Pods/Target Support Files/Pods-GYSignal_Example/Pods-GYSignal_Example-frameworks.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-GYSignal_Example/Pods-GYSignal_Example-frameworks.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */

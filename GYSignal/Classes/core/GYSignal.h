@@ -9,196 +9,129 @@
 #import <Foundation/Foundation.h>
 #import "GYTuple.h"
 
+NS_ASSUME_NONNULL_BEGIN
+
 ///信号订阅者
 @protocol GYSubscriber <NSObject>
-- (void)sendValue:(id)value;///<发送值
-- (void)sendComplete;///<发送完成
-- (void)sendError:(NSError *)error;///<发送失败
+
+/// 发送值事件
+/// @param value 值对象
+- (void)sendValue:(nullable id)value;
+
+/// 发送完成事件
+- (void)sendComplete;
+
+/// 发送失败事件
+/// @param error 错误对象
+- (void)sendError:(NSError *)error;
+
 @end
 
 ///信号销毁者
 @interface GYSignalDisposer : NSObject
-@property (nonatomic, readonly, getter=isDisposed) BOOL disposed;///<信号是否被销毁
 
-/**
- 创建信号销毁对象
+/// 信号是否被销毁
+@property (nonatomic, readonly, getter=isDisposed) BOOL disposed;
 
- @param action 销毁时的自定义操作
- @return 信号销毁对象
- */
-+ (instancetype)disposerWithAction:(void (^)(void))action;
+/// 创建信号销毁对象
+/// @param action 销毁时的自定义操作
++ (instancetype)disposerWithAction:(nullable void (^)(void))action;
 
-/**
- 销毁操作
- */
+/// 销毁操作
 - (void)dispose;
+
 @end
 
 
 ///信号
 @interface GYSignal<T> : NSObject
 
-/**
- 创建信号
-
- @param block 信号被订阅时触发
- @return 信号
- */
+/// 创建信号
+/// @param block 信号被订阅时的动作
 + (instancetype)signalWithAction:(GYSignalDisposer *(^)(id<GYSubscriber> subscriber))block;
 
-/**
- 创建信号
- 
- @param block 信号被订阅时触发
- @return 信号
- */
+/// 创建信号
+/// @param block 信号被订阅时的动作
 - (instancetype)initWithAction:(GYSignalDisposer *(^)(id<GYSubscriber> subscriber))block;
 
 #pragma mark - subscribe
-/**
- 订阅信号
 
- @param valueBlock 当信号发送值时触发
- @return 信号销毁者
- */
-- (GYSignalDisposer *)subscribeValue:(void(^)(T value))valueBlock;
+/// 订阅信号
+/// @param valueBlock 值回调，可以回调多次
+- (GYSignalDisposer *)subscribeValue:(nullable void(^)(_Nullable T value))valueBlock;
 
-/**
- 订阅信号
+/// 订阅信号
+/// @param errorBlock 错误回调，最多回调一次，与完成回调互斥
+- (GYSignalDisposer *)subscribeError:(nullable void(^)(NSError *error))errorBlock;
 
- @param errorBlock 当信号发送失败时触发
- @return 信号销毁者
- */
-- (GYSignalDisposer *)subscribeError:(void(^)(NSError *error))errorBlock;
+/// 订阅信号
+/// @param completeBlock 完成回调，最多回调一次，与错误回调互斥
+- (GYSignalDisposer *)subscribeComplete:(nullable void(^)(void))completeBlock;
 
-/**
- 订阅信号
+/// 订阅信号
+/// @param valueBlock 值回调，可以回调多次
+/// @param errorBlock 错误回调，最多回调一次，与完成回调互斥
+- (GYSignalDisposer *)subscribeValue:(nullable void(^)(_Nullable T value))valueBlock
+                               error:(nullable void(^)(NSError *error))errorBlock;
 
- @param completeBlock 当信号发送完成时触发
- @return 信号销毁者
- */
-- (GYSignalDisposer *)subscribeComplete:(void(^)(void))completeBlock;
 
-/**
- 订阅信号
+/// 订阅信号
+/// @param valueBlock 值回调，可以执行多次
+/// @param completeBlock 完成回调，最多回调一次，与错误回调互斥
+- (GYSignalDisposer *)subscribeValue:(nullable void(^)(_Nullable T value))valueBlock
+                            complete:(nullable void(^)(void))completeBlock;
 
- @param valueBlock 当信号发送值时触发
- @param errorBlock 当信号发送失败时触发
- @return 信号销毁者
- */
-- (GYSignalDisposer *)subscribeValue:(void(^)(T value))valueBlock
-                           error:(void(^)(NSError *error))errorBlock;
 
-/**
- 订阅信号
-
- @param valueBlock 当信号发送值时触发
- @param completeBlock 当信号发送完成时触发
- @return 信号销毁者
- */
-- (GYSignalDisposer *)subscribeValue:(void(^)(T value))valueBlock
-                        complete:(void(^)(void))completeBlock;
-
-/**
- 订阅信号
-
- @param valueBlock 当信号发送值时触发
- @param errorBlock 当信号发送失败时触发
- @param completeBlock 当信号发送完成时触发
- @return 信号销毁者
- */
-- (GYSignalDisposer *)subscribeValue:(void(^)(T value))valueBlock
-                          error:(void(^)(NSError *error))errorBlock
-                       complete:(void(^)(void))completeBlock;
+/// 订阅信号
+/// @param valueBlock 值回调，可以回调多次
+/// @param errorBlock 错误回调，最多回调一次，与完成回调互斥
+/// @param completeBlock 完成回调，最多回调一次，与错误回调互斥
+- (GYSignalDisposer *)subscribeValue:(nullable void(^)(_Nullable T value))valueBlock
+                               error:(nullable void(^)(NSError *error))errorBlock
+                            complete:(nullable void(^)(void))completeBlock;
 
 #pragma mark - operations
 
-/**
- 确保值不同
- OnValue:当原信号发送的值和上次不同时，订阅者才会收到值。
- OnError:当原信号发送失败时，订阅者会收到失败。
- OnComplete:当原信号发送完成时，订阅者会收到完成。
+/// 创建固定值信号
+/// @param value 值
++ (instancetype)just:(nullable T)value;
 
- @return 新的信号
- */
+/// 值过滤
+/// 值回调：源信号发送值，只有block返回布尔真时订阅者才会触发值回调
+/// 错误回调：源信号发送错误，订阅者触发错误回调
+/// 完成回调：源信号发送完成，订阅者触发完成回调
+/// @param block 过滤block
+- (instancetype)filter:(BOOL(^)(T value))block;
+
 - (instancetype)diffrent;
 
-/**
- 指定忽略次数
- OnValue:当原信号发送的值超过忽略次数后，订阅者才会收到值。
- OnError:当原信号发送失败时，订阅者会收到失败。
- OnComplete:当原信号发送完成时，订阅者会收到完成。
+/// 值节流
+/// 值回调：源信号发送值，只有block返回布尔真时订阅者才会触发值回调
+/// 错误回调：源信号发送错误，订阅者触发错误回调
+/// 完成回调：源信号发送完成，订阅者触发完成回调
+/// @param takeCount 获取值次数
+- (instancetype)take:(NSUInteger)takeCount;
 
- @param skipCount 忽略次数
- @return 新的信号
- */
 - (instancetype)skip:(NSUInteger)skipCount;
 
-/**
- 信号组合:
- OnValue:当组合的信号发送值时，订阅者会收到值。
- OnError:当组合的信号发送失败时，订阅者会收到失败。
- OnComplete:当组合的信号发送完成时，订阅者会收到完成。
+/// 失败重试
+/// @param count 重试次数
+- (instancetype)retry:(NSUInteger)count;
 
- @param signals 被组合的信号数组
- @return 新的信号
- */
 - (instancetype)merge:(NSArray<GYSignal<T> *> *)signals;
 
-/**
- 指定最终操作:
- OnValue:当原信号发送值时，订阅者会收到值。
- OnError:当原信号发送失败时，订阅者会收到失败，接着执行最终操作。
- OnComplete:当原信号发送完成时，订阅者会收到完成，接着执行最终操作。
-
- @param block 自定义最终操作
- @return 新的信号
- */
 - (instancetype)finally:(void (^)(void))block;
 
-/**
- 值映射:
- OnValue:当原信号发送值时，订阅者会收到映射之后的值。
- OnError:当原信号发送失败时，订阅者会收到失败。
- OnComplete:当原信号发送完成时，订阅者会收到完成。
+/// 值转换
+- (GYSignal *)map:(id (^)(_Nullable T value))block;
 
- @param block 映射block
- @return 新的信号
- */
-- (GYSignal *)map:(id (^)(T value))block;
+/// 信号转换
+- (GYSignal *)flattenMap:(GYSignal * (^)(_Nullable T value))block;
 
-/**
- 信号映射:
- OnValue:当原信号发送值时，订阅者会去订阅信号映射返回的信号。
- OnError:当原信号发送失败时，订阅者会收到失败。
- OnComplete:当原信号发送完成时，订阅者会收到完成。
-
- @param block 映射block
- @return 新的信号
- */
-- (GYSignal *)flattenMap:(GYSignal * (^)(T value))block;
-
-/**
- 指定后续信号:
- OnValue:当原信号发送值时，订阅者不会收到值。
- OnError:当原信号发送失败时，订阅者会收到失败。
- OnComplete:当原信号发送完成时，订阅者会去订阅后续信号。
-
- @param signal 后续信号
- @return 新的信号
- */
 - (GYSignal *)then:(nonnull GYSignal *)signal;
 
-/**
- 信号打包:
- OnValue:只有打包的信号中都至少发送过一次值，新的信号才会发送值，并且订阅者收到的值是一个元组对象，可以根据打包时的顺序在元组中取值。
- OnError:只要有一个打包的信号发送失败，这个新的信号就会发送失败。
- OnComplete:当所有打包的信号都发送完成时，这个新的信号才会发送完成。
-
- @param signals 被打包的信号数组
- @return 新的信号
- */
 - (GYSignal<GYTuple *> *)zip:(NSArray<GYSignal *> *)signals;
 
-
 @end
+
+NS_ASSUME_NONNULL_END

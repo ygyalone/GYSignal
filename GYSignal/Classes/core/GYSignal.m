@@ -164,6 +164,28 @@ const id GYSignalNilFlag = @__FILE__;
 }
 
 #pragma mark - options
++ (instancetype)just:(id)value {
+    return [GYSignal signalWithAction:^GYSignalDisposer * _Nonnull(id<GYSubscriber>  _Nonnull subscriber) {
+        [subscriber sendValue:value];
+        [subscriber sendComplete];
+        return [GYSignalDisposer disposerWithAction:nil];
+    }];
+}
+
+- (instancetype)filter:(BOOL (^)(id _Nonnull))block {
+    return [GYSignal signalWithAction:^GYSignalDisposer * _Nonnull(id<GYSubscriber>  _Nonnull subscriber) {
+        return [self subscribeValue:^(id  _Nullable value) {
+            if (block(value) == YES) {
+                [subscriber sendValue:value];
+            }
+        } error:^(NSError * _Nonnull error) {
+            [subscriber sendError:error];
+        } complete:^{
+            [subscriber sendComplete];
+        }];
+    }];
+}
+
 - (instancetype)diffrent {
     __block id lastValue = GYSignalNilFlag;
     return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
@@ -189,8 +211,7 @@ const id GYSignalNilFlag = @__FILE__;
     }];
 }
 
-- (GYSignal *)map:(id (^)(id))block {
-    NSAssert(block!=nil, @"<GYSignalError: map block cant be nil!>");
+- (GYSignal *)map:(id  _Nonnull (^)(id _Nullable))block {
     return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
         return [self subscribeValue:^(id value) {
             [subscriber sendValue:block(value)];
@@ -202,35 +223,27 @@ const id GYSignalNilFlag = @__FILE__;
     }];
 }
 
-- (GYSignal *)flattenMap:(GYSignal *(^)(id))block {
-    NSAssert(block!=nil, @"<GYSignalError: flattenMap block cant be nil!>");
+- (GYSignal *)flattenMap:(GYSignal * _Nonnull (^)(id _Nullable))block {
     return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
         
-        __block GYSignalDisposer *innerSignalDisposer = nil;
-        NSMutableArray *disposers = [NSMutableArray array];
-        GYSignalDisposer *disposer =
-        [self subscribeValue:^(id value) {
+        NSMutableArray<GYSignalDisposer *> *disposers = [NSMutableArray array];
+        
+        [disposers addObject:[self subscribeValue:^(id value) {
             
             GYSignal *flattenMapSignal = block(value);
-            innerSignalDisposer =
-            [flattenMapSignal subscribeValue:^(id value) {
+            [disposers addObject:[flattenMapSignal subscribeValue:^(id value) {
                 [subscriber sendValue:value];
             } error:^(NSError *error) {
                 [subscriber sendError:error];
             } complete:^{
                 [subscriber sendComplete];
-            }];
+            }]];
             
         } error:^(NSError *error) {
             [subscriber sendError:error];
         } complete:^{
             [subscriber sendComplete];
-        }];
-        
-        [disposers addObject:disposer];
-        if (innerSignalDisposer) {
-            [disposers addObject:innerSignalDisposer];
-        }
+        }]];
         
         return [GYSignalDisposer disposerWithAction:^{
             for (GYSignalDisposer *disposer in disposers) {
@@ -243,51 +256,51 @@ const id GYSignalNilFlag = @__FILE__;
 
 - (instancetype)skip:(NSUInteger)skipCount {
     __block NSUInteger count = 0;
-    return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
-        return [self subscribeValue:^(id value) {
-            
-            if (count >= skipCount) {
-                [subscriber sendValue:value];
-            }else {
-                @synchronized (self) {
-                    count++;
-                }
+    return [self filter:^BOOL(id  _Nonnull value) {
+        if (count >= skipCount) {
+            return YES;
+        }else {
+            @synchronized (self) {
+                count++;
             }
-            
-        } error:^(NSError *error) {
-            [subscriber sendError:error];
-        } complete:^{
-            [subscriber sendComplete];
-        }];
+            return NO;
+        }
+    }];
+}
+
+- (instancetype)take:(NSUInteger)takeCount {
+    __block NSUInteger count = 0;
+    return [self filter:^BOOL(id  _Nonnull value) {
+        if (count < takeCount) {
+            @synchronized (self) {
+                count++;
+            }
+            return YES;
+        }else {
+            return NO;
+        }
     }];
 }
 
 - (GYSignal *)then:(GYSignal *)signal {
     return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
         
-        NSMutableArray *disposers = [NSMutableArray array];
-        __block GYSignalDisposer *thenDisposer;
-        GYSignalDisposer *disposer =
-        [self subscribeValue:^(id value) {
+        NSMutableArray<GYSignalDisposer *> *disposers = [NSMutableArray array];
+        [disposers addObject:[self subscribeValue:^(id value) {
             //do nothing
         } error:^(NSError *error) {
             [subscriber sendError:error];
         } complete:^{
             
-            thenDisposer =
-            [signal subscribeValue:^(id value) {
+            [disposers addObject:[signal subscribeValue:^(id value) {
                 [subscriber sendValue:value];
             } error:^(NSError *error) {
                 [subscriber sendError:error];
             } complete:^{
                 [subscriber sendComplete];
-            }];
-        }];
-        
-        [disposers addObject:disposer];
-        if (thenDisposer) {
-            [disposers addObject:thenDisposer];
-        }
+            }]];
+            
+        }]];
         
         return [GYSignalDisposer disposerWithAction:^{
             for (GYSignalDisposer *disposer in disposers) {
@@ -307,15 +320,13 @@ const id GYSignalNilFlag = @__FILE__;
         [mergedSignals addObjectsFromArray:signals];
         
         for (GYSignal *s in mergedSignals) {
-            GYSignalDisposer *disposer =
-            [s subscribeValue:^(id value) {
+            [disposers addObject:[s subscribeValue:^(id value) {
                 [subscriber sendValue:value];
             } error:^(NSError *error) {
                 [subscriber sendError:error];
             } complete:^{
                 [subscriber sendComplete];
-            }];
-            [disposers addObject:disposer];
+            }]];
         }
         
         return [GYSignalDisposer disposerWithAction:^{
@@ -340,6 +351,41 @@ const id GYSignalNilFlag = @__FILE__;
     }];
 }
 
+- (instancetype)retry:(NSUInteger)count {
+    return [GYSignal signalWithAction:^GYSignalDisposer * _Nonnull(id<GYSubscriber>  _Nonnull subscriber) {
+        return [self _retryWithSubscriber:subscriber count:count+1];
+    }];
+}
+
+- (GYSignalDisposer *)_retryWithSubscriber:(id<GYSubscriber>)subscriber count:(NSUInteger)count {
+    __block NSInteger retryCount = count;
+    NSMutableArray<GYSignalDisposer *> *disposers = [NSMutableArray arrayWithCapacity:retryCount];
+    
+    [disposers addObject:[self subscribeValue:^(id  _Nullable value) {
+        [subscriber sendValue:value];
+        
+    } error:^(NSError * _Nonnull error) {
+        @synchronized (self) {
+            retryCount--;
+        }
+        
+        if (retryCount == 0) {
+            [subscriber sendError:error];
+        }else {
+            [disposers addObject:[self _retryWithSubscriber:subscriber count:retryCount]];
+        }
+        
+    } complete:^{
+        [subscriber sendComplete];
+    }]];
+    
+    return [GYSignalDisposer disposerWithAction:^{
+        for (GYSignalDisposer *disposer in disposers) {
+            [disposer dispose];
+        }
+    }];
+}
+
 - (GYSignal<GYTuple *> *)zip:(NSArray<GYSignal *> *)signals {
     NSMutableArray *zip = [NSMutableArray array];
     [zip addObject:self];
@@ -355,9 +401,7 @@ const id GYSignalNilFlag = @__FILE__;
     return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
         
         for (GYSignal *signal in zip) {
-            
-            GYSignalDisposer *disposer =
-            [signal subscribeValue:^(id value) {
+            [disposers addObject:[signal subscribeValue:^(id value) {
                 @synchronized(self) {
                     values[[zip indexOfObject:signal]] = value;
                 }
@@ -376,9 +420,7 @@ const id GYSignalNilFlag = @__FILE__;
                 if (wait==0) {
                     [subscriber sendComplete];
                 }
-            }];
-            
-            [disposers addObject:disposer];
+            }]];
         }
         
         return [GYSignalDisposer disposerWithAction:^{

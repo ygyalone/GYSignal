@@ -8,6 +8,8 @@
 
 #import <Foundation/Foundation.h>
 
+NS_ASSUME_NONNULL_BEGIN
+
 ///可变参数终止标记
 extern const id GYTupleEndFlag;
 
@@ -39,3 +41,5 @@ extern const id GYTupleEndFlag;
 - (void)setObject:(nullable id)obj atIndexedSubscript:(NSUInteger)index;
 - (BOOL)contains:(nullable id)obj;
 @end
+
+NS_ASSUME_NONNULL_END

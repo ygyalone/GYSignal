@@ -79,6 +79,35 @@
     }];
 }
 
+- (void)test_just {
+    __block id result;
+    GYSignal *signal = [GYSignal just:@"666"];
+    [signal subscribeValue:^(id  _Nullable value) {
+        result = value;
+    }];
+    XCTAssert([result isEqual:@"666"], @"test_just failed!");
+}
+
+- (void)test_filter {
+    NSMutableArray *results = @[].mutableCopy;
+    GYSignal<NSNumber *> *signal = [GYSignal signalWithAction:^GYSignalDisposer * _Nonnull(id<GYSubscriber>  _Nonnull subscriber) {
+        [subscriber sendValue:@1];
+        [subscriber sendValue:@2];
+        [subscriber sendValue:@3];
+        [subscriber sendValue:@4];
+        [subscriber sendValue:@5];
+        return [GYSignalDisposer disposerWithAction:nil];
+    }];
+    
+    
+    [[signal filter:^BOOL(NSNumber * _Nonnull value) {
+        return value.integerValue %2 != 0;
+    }] subscribeValue:^(NSNumber * _Nullable value) {
+        [results addObject:value];
+    }];
+    NSArray *expected = @[@1,@3,@5];
+    XCTAssert([results isEqual:expected], @"test_filter failed!");
+}
 
 - (void)test_diffrent {
     GYSignal *signal = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
@@ -112,13 +141,33 @@
         }];
     }];
     
-    NSMutableArray *recivedValues = @[].mutableCopy;
+    NSMutableArray *receivedValues = @[].mutableCopy;
     [[signal skip:2] subscribeValue:^(id value) {
-        [recivedValues addObject:value];
+        [receivedValues addObject:value];
     }];
     
-    BOOL isEqual = [recivedValues isEqualToArray:@[@"2",@"3"]];
+    BOOL isEqual = [receivedValues isEqualToArray:@[@"2",@"3"]];
     XCTAssert(isEqual, @"test_skip failed!");
+}
+
+- (void)test_take {
+    GYSignal *signal = [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
+        [subscriber sendValue:@"1"];
+        [subscriber sendValue:@"1"];
+        [subscriber sendValue:@"2"];
+        [subscriber sendValue:@"3"];
+        return [GYSignalDisposer disposerWithAction:^{
+            NSLog(@"signal disposed");
+        }];
+    }];
+    
+    NSMutableArray *receivedValues = @[].mutableCopy;
+    [[signal take:3] subscribeValue:^(id value) {
+        [receivedValues addObject:value];
+    }];
+    
+    BOOL isEqual = [receivedValues isEqualToArray:@[@"1",@"1",@"2"]];
+    XCTAssert(isEqual, @"test_take failed!");
 }
 
 
@@ -264,6 +313,60 @@
         XCTAssert(valid, @"test_zip failed!");
     }];
 }
+
+- (void)test_retrySucceed {
+    __block NSInteger count = 3;
+    XCTestExpectation *expectation = [self expectationWithDescription:@"retry failed!"];
+    GYSignal *signal = [GYSignal signalWithAction:^GYSignalDisposer * _Nonnull(id<GYSubscriber>  _Nonnull subscriber) {
+        if (count > 0) {
+            count--;
+            [subscriber sendError:[NSError errorWithDomain:@"error domain" code:1 userInfo:nil]];
+        }else {
+            [subscriber sendValue:@"ok"];
+        }
+        return [GYSignalDisposer disposerWithAction:^{
+            NSLog(@"signal disposed");
+        }];
+    }];
+    
+    [[signal retry:3] subscribeValue:^(id  _Nullable value) {
+        [expectation fulfill];
+    } error:^(NSError * _Nonnull error) {
+        //nothing to do
+    }];
+    
+    [self waitForExpectationsWithTimeout:0.1 handler:^(NSError * _Nullable error) {
+        XCTAssertNil(error, @"%@", error);
+    }];
+}
+
+- (void)test_retryFailed {
+    __block NSInteger count = 3;
+    XCTestExpectation *expectation = [self expectationWithDescription:@"retry failed!"];
+    GYSignal *signal = [GYSignal signalWithAction:^GYSignalDisposer * _Nonnull(id<GYSubscriber>  _Nonnull subscriber) {
+        if (count > 0) {
+            count--;
+            [subscriber sendError:[NSError errorWithDomain:@"error domain" code:1 userInfo:nil]];
+        }else {
+            [subscriber sendValue:@"ok"];
+        }
+        return [GYSignalDisposer disposerWithAction:^{
+            NSLog(@"signal disposed");
+        }];
+    }];
+    
+    [[signal retry:2] subscribeValue:^(id  _Nullable value) {
+        //nothing to do
+    } error:^(NSError * _Nonnull error) {
+        [expectation fulfill];
+    }];
+    
+    [self waitForExpectationsWithTimeout:0.1 handler:^(NSError * _Nullable error) {
+        XCTAssertNil(error, @"%@", error);
+    }];
+}
+
+
 
 - (void)test_dispose {
     XCTestExpectation *expectation = [self expectationWithDescription:@"dispose block not executed!"];
