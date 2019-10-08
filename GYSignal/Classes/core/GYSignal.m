@@ -188,21 +188,22 @@ const id GYSignalNilFlag = @__FILE__;
 
 - (instancetype)diffrent {
     __block id lastValue = GYSignalNilFlag;
+    NSObject *lock = [NSObject new];
     return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
         return [self subscribeValue:^(id value) {
-            
-            if (lastValue == nil) {
-                if (value != nil) {
-                    lastValue = value;
-                    [subscriber sendValue:lastValue];
-                }
-            }else {
-                if ([lastValue isEqual:value] == NO) {
-                    lastValue = value;
-                    [subscriber sendValue:lastValue];
+            @synchronized (lock) {
+                if (lastValue == nil) {
+                    if (value != nil) {
+                        lastValue = value;
+                        [subscriber sendValue:lastValue];
+                    }
+                }else {
+                    if ([lastValue isEqual:value] == NO) {
+                        lastValue = value;
+                        [subscriber sendValue:lastValue];
+                    }
                 }
             }
-            
         } error:^(NSError *error) {
             [subscriber sendError:error];
         } complete:^{
@@ -225,9 +226,7 @@ const id GYSignalNilFlag = @__FILE__;
 
 - (GYSignal *)flattenMap:(GYSignal * _Nonnull (^)(id _Nullable))block {
     return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
-        
         NSMutableArray<GYSignalDisposer *> *disposers = [NSMutableArray array];
-        
         [disposers addObject:[self subscribeValue:^(id value) {
             
             GYSignal *flattenMapSignal = block(value);
@@ -256,28 +255,30 @@ const id GYSignalNilFlag = @__FILE__;
 
 - (instancetype)skip:(NSUInteger)skipCount {
     __block NSUInteger count = 0;
+    NSObject *lock = [NSObject new];
     return [self filter:^BOOL(id  _Nonnull value) {
-        if (count >= skipCount) {
-            return YES;
-        }else {
-            @synchronized (self) {
+        @synchronized (lock) {
+            if (count >= skipCount) {
+                return YES;
+            }else {
                 count++;
+                return NO;
             }
-            return NO;
         }
     }];
 }
 
 - (instancetype)take:(NSUInteger)takeCount {
     __block NSUInteger count = 0;
+    NSObject *lock = [NSObject new];
     return [self filter:^BOOL(id  _Nonnull value) {
-        if (count < takeCount) {
-            @synchronized (self) {
+        @synchronized (lock) {
+            if (count < takeCount) {
                 count++;
+                return YES;
+            }else {
+                return NO;
             }
-            return YES;
-        }else {
-            return NO;
         }
     }];
 }
@@ -312,7 +313,6 @@ const id GYSignalNilFlag = @__FILE__;
 }
 
 - (instancetype)merge:(NSArray *)signals {
-    NSAssert(signals != nil, @"merged signals cant be nil!");
     return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
         
         NSMutableArray *disposers = [NSMutableArray array];
@@ -359,22 +359,21 @@ const id GYSignalNilFlag = @__FILE__;
 
 - (GYSignalDisposer *)_retryWithSubscriber:(id<GYSubscriber>)subscriber count:(NSUInteger)count {
     __block NSInteger retryCount = count;
+    NSObject *lock = [NSObject new];
     NSMutableArray<GYSignalDisposer *> *disposers = [NSMutableArray arrayWithCapacity:retryCount];
     
     [disposers addObject:[self subscribeValue:^(id  _Nullable value) {
         [subscriber sendValue:value];
         
     } error:^(NSError * _Nonnull error) {
-        @synchronized (self) {
+        @synchronized (lock) {
             retryCount--;
+            if (retryCount == 0) {
+                [subscriber sendError:error];
+            }else {
+                [disposers addObject:[self _retryWithSubscriber:subscriber count:retryCount]];
+            }
         }
-        
-        if (retryCount == 0) {
-            [subscriber sendError:error];
-        }else {
-            [disposers addObject:[self _retryWithSubscriber:subscriber count:retryCount]];
-        }
-        
     } complete:^{
         [subscriber sendComplete];
     }]];
@@ -387,6 +386,7 @@ const id GYSignalNilFlag = @__FILE__;
 }
 
 - (GYSignal<GYTuple *> *)zip:(NSArray<GYSignal *> *)signals {
+    NSObject *lock = [NSObject new];
     NSMutableArray *zip = [NSMutableArray array];
     [zip addObject:self];
     
@@ -402,7 +402,7 @@ const id GYSignalNilFlag = @__FILE__;
         
         for (GYSignal *signal in zip) {
             [disposers addObject:[signal subscribeValue:^(id value) {
-                @synchronized(self) {
+                @synchronized(values) {
                     values[[zip indexOfObject:signal]] = value;
                 }
                 
@@ -414,11 +414,11 @@ const id GYSignalNilFlag = @__FILE__;
                 [subscriber sendError:error];
                 
             } complete:^{
-                @synchronized(self) {
+                @synchronized(lock) {
                     wait--;
-                }
-                if (wait==0) {
-                    [subscriber sendComplete];
+                    if (wait==0) {
+                        [subscriber sendComplete];
+                    }
                 }
             }]];
         }
