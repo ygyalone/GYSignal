@@ -99,12 +99,13 @@
         return [GYSignalDisposer disposerWithAction:nil];
     }];
     
-    
-    [[signal filter:^BOOL(NSNumber * _Nonnull value) {
+    [[signal filter:^BOOL(NSNumber * _Nullable value) {
         return value.integerValue %2 != 0;
     }] subscribeValue:^(NSNumber * _Nullable value) {
         [results addObject:value];
     }];
+    
+    
     NSArray *expected = @[@1,@3,@5];
     XCTAssert([results isEqual:expected], @"test_filter failed!");
 }
