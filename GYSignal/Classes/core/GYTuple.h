@@ -27,12 +27,6 @@ extern const id GYTupleEndFlag;
 @property (nonatomic, readonly) id fifth;
 @property (nonatomic, readonly) id last;
 
-/**
- 使用可变参数生成元组,注意使用GYTupleEndFlag来表明参数截止
-
- @param first 注意:参数列表不能有基本数据类型
- @return 返回元组模型
- */
 + (instancetype)tupleWithObjects:(id)first, ...;
 + (instancetype)tupleWithObjectsFromArray:(NSArray *)objs;
 + (instancetype)tupleWithSize:(NSUInteger)size;

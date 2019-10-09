@@ -47,17 +47,21 @@ const id GYSignalNilFlag = @__FILE__;
 }
 
 - (void)sendComplete {
-    if (_completeBlock) {
-        _completeBlock();
+    @synchronized (self) {
+        if (_completeBlock) {
+            _completeBlock();
+        }
+        [self dispose];
     }
-    [self dispose];
 }
 
 - (void)sendError:(NSError *)error {
-    if (_errorBlock) {
-        _errorBlock(error);
+    @synchronized (self) {
+        if (_errorBlock) {
+            _errorBlock(error);
+        }
+        [self dispose];
     }
-    [self dispose];
 }
 
 - (void)dealloc {
