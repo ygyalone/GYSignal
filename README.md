@@ -101,8 +101,6 @@ GYSignal *signal = [GYSignal signalWithAction:^GYSignalDisposer * _Nonnull(id<GY
 }];
 ```
 
-
-
 销毁信号
 
 ```objc
@@ -307,7 +305,7 @@ GYObserve(self, aString);//宏的便利写法
 
 **UITextField.gy_textSignal（监听UITextField的text属性变化）**
 
-当手动输入`UITextField` 控件的内容时，通过 `KVO` 并不能监听到text属性的变化。需要通过 `target-action` 的方式通知。`gy_textSignal`是 `UITextField` 的扩展方法，将 `KVO` 和 `target-action` 统一封装成一个信号。保证监听 `text` 属性在任何时候的变化。
+当手动输入`UITextField` 控件的内容时，通过 `KVO` 并不能监听到 `text` 属性的变化，而需要通过 `target-action` 的方式获取变化。`gy_textSignal`是 `UITextField` 的扩展方法，通过将 `KVO` 和 `target-action` 统一封装成一个信号，保证在任何时候都能监听 `text` 属性的变化。
 
 ```objc
 textField.gy_textSignal;
@@ -330,6 +328,10 @@ GYSignal<NSNumber *> *signal;
 ###  宏
 
 如果使用 Objective-C 语言调用 `gy_signalForKeyPath` 方法。推荐使用 `GYObserve` 宏。使用该宏除了有智能提示还能够提供编译期的检查，防止 `KeyPath` 写错的问题。
+
+```objc
+GYObserve(self, aString);
+```
 
 
 
