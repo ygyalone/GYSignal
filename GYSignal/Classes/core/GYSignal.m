@@ -216,7 +216,8 @@ const id GYSignalNilFlag = @__FILE__;
     }];
 }
 
-- (GYSignal *)map:(id  _Nonnull (^)(id _Nullable))block {
+
+- (GYSignal *)map:(id  _Nullable (^)(id _Nullable))block {
     return [GYSignal signalWithAction:^GYSignalDisposer *(id<GYSubscriber> subscriber) {
         return [self subscribeValue:^(id value) {
             [subscriber sendValue:block(value)];

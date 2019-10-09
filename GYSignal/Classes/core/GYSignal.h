@@ -137,14 +137,14 @@ NS_ASSUME_NONNULL_BEGIN
 /// @param block 最终操作
 - (instancetype)finally:(void (^)(void))block;
 
-/// 值转换
+/// 值映射
 /// 值回调：当源信号发送值，订阅者会触发值回调，接收到的值为转换之后的值。
 /// 错误回调：当源信号发送错误，订阅者会触发错误回调。
 /// 完成回调：当源信号发送完成，订阅者会触发完成回调。
 /// @param block 值转换操作
-- (GYSignal *)map:(id (^)(_Nullable T value))block;
+- (GYSignal *)map:(_Nullable id (^)(_Nullable T value))block;
 
-/// 信号转换
+/// 信号映射
 /// 值回调：当源信号发送值，订阅者会去订阅转换后的信号。
 /// 错误回调：当源信号或者转换后的信号发送错误，订阅者会触发错误回调。
 /// 完成回调：当源信号或者转换后的信号发送完成，订阅者会触发完成回调。
@@ -152,11 +152,11 @@ NS_ASSUME_NONNULL_BEGIN
 - (GYSignal *)flattenMap:(GYSignal * (^)(_Nullable T value))block;
 
 /// 后续信号
-/// 值回调：当源信号发送值，订阅者会触发值回调。
+/// 值回调：当源信号发送值，订阅者 不会 触发值回调。
 /// 错误回调：当源信号发送错误，订阅者会触发错误回调。
 /// 完成回调：当源信号发送完成，订阅者会去订阅参数指定的信号。
 /// @param signal 完成之后的信号
-- (GYSignal *)then:(nonnull GYSignal *)signal;
+- (GYSignal *)then:(GYSignal *)signal;
 
 /// 信号合并
 /// 值回调：源信号或者合并的信号发送值，订阅者会触发值回调。
