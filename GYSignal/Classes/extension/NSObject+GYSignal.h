@@ -17,5 +17,4 @@
 
 @interface NSObject (GYSignal)
 - (GYSignal *)gy_signalForKeyPath:(NSString *)keyPath;
-- (GYSignal *)gy_deallocSignal;
 @end

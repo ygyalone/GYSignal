@@ -1,14 +1,12 @@
 
 # GYSignal
->响应式编程框架将异步事件抽象成三类：
->
->* 值事件，可以触发多次
->
->* 错误事件，最多只会触发一次，与完成事件互斥
->
->* 完成事件，最多只会触发一次，与错误事件互斥
-
 **GYSignal是iOS平台下对响应式编程的支持,文档补充中...**
+
+响应式编程框架将异步事件抽象成三类：
+
+- 值事件，可以触发多次
+- 错误事件，最多只会触发一次，与完成事件互斥
+- 完成事件，最多只会触发一次，与错误事件互斥
 
 
 
@@ -64,13 +62,13 @@
 
 ## 类说明
 
-**GYSigna(信号)**
+**GYSignal（信号）**
 
-**GYSubscriber(信号订阅者)**
+**GYSubscriber（订阅者）**
 
-**GYSignalDisposer(信号销毁者)**
+**GYSignalDisposer（信号销毁者）**
 
-**GYTuple(元组)**
+**GYTuple（元组）**
 
 
 
@@ -78,20 +76,43 @@
 创建信号
 
 ```objc
-
+GYSignal *signal = [GYSignal signalWithAction:^GYSignalDisposer * _Nonnull(id<GYSubscriber>  _Nonnull subscriber) {
+    //发送值事件
+    [subscriber sendValue:@"1"];
+    //发送完成事件
+    [subscriber sendComplete];
+    //发送错误事件
+    [subscriber sendError:[NSError errorWithDomain:@"error domain" code:-1 userInfo:nil]];
+    return [GYSignalDisposer disposerWithAction:^{
+        //信号销毁之后的操作可以放在这里，例如资源释放等等
+    }];
+}];
 ```
 
 订阅信号
 
 ```objc
-abc
+[signal subscribeValue:^(id  _Nullable value) {
+        //值事件触发
+    } error:^(NSError * _Nonnull error) {
+        //错误事件触发
+    } complete:^{
+        //完成事件触发
+}];
 ```
 
-发送值事件
 
-发送错误事件
 
-发送完成事件
+销毁信号
+
+```objc
+GYSignalDisposer *disposer = [signal subscribeValue:^(id  _Nullable value) {
+    //值事件触发
+}];
+
+//当不再需要订阅信号时，可以手动（非必须，订阅者释放时会自动执行销毁操作）调用销毁方法，执行销毁操作。
+[disposer dispose];
+```
 
 
 
@@ -275,6 +296,8 @@ GYSignal *signal = [GYSignal just:@"666"];
 
 **gy_signalForKeyPath（监听属性变化）**
 
+`gy_signalForKeyPath` 是 `NSObject` 的扩展方法，该方法将 `KVO` 封装为一个信号。
+
 ```objc
 GYObserve(self, aString);//宏的便利写法
 [self gy_signalForKeyPath:@"aString"];
@@ -282,7 +305,9 @@ GYObserve(self, aString);//宏的便利写法
 
 
 
-**UITextField.gy_textSignal（UITextField对text属性的监听）**
+**UITextField.gy_textSignal（监听UITextField的text属性变化）**
+
+当手动输入`UITextField` 控件的内容时，通过 `KVO` 并不能监听到text属性的变化。需要通过 `target-action` 的方式通知。`gy_textSignal`是 `UITextField` 的扩展方法，将 `KVO` 和 `target-action` 统一封装成一个信号。保证监听 `text` 属性在任何时候的变化。
 
 ```objc
 textField.gy_textSignal;
@@ -294,7 +319,7 @@ textField.gy_textSignal;
 
 ### 泛型
 
-`GYSignal`支持泛型，泛型类型被用来指定值的类型。推荐使用者在创建信号时指定泛型类型。可以减少类型转换的代码，同时也增加了代码的可读性。
+`GYSignal`支持泛型，泛型类型被用来指定值的类型。推荐使用者在创建信号时指定泛型类型。使用泛型可以减少类型转换的代码，同时也增加了代码的可读性。
 
 ```objc
 GYSignal<NSNumber *> *signal;
@@ -304,16 +329,19 @@ GYSignal<NSNumber *> *signal;
 
 ###  宏
 
-宏的使用，提供编译期检查。
+如果使用 Objective-C 语言调用 `gy_signalForKeyPath` 方法。推荐使用 `GYObserve` 宏。使用该宏除了有智能提示还能够提供编译期的检查，防止 `KeyPath` 写错的问题。
 
 
 
 ## Author
 
-ygy, ygy9916730@163.com
+ygy
+
+ygy9916730@163.com
 
 
 
 ## License
 
 GYSignal is available under the MIT license. See the LICENSE file for more info.
+

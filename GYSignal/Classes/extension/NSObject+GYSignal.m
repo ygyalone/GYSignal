@@ -23,15 +23,10 @@
 - (void)observeTarget:(id)target forKeyPath:(NSString *)keyPath {
     self.target = target;
     self.keyPath = keyPath;
-    [_target
-     addObserver:self forKeyPath:_keyPath
-     options:NSKeyValueObservingOptionNew|NSKeyValueObservingOptionInitial
-     context:nil];
+    [_target addObserver:self forKeyPath:_keyPath options:NSKeyValueObservingOptionNew | NSKeyValueObservingOptionInitial context:nil];
 }
 
-- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object
-                        change:(NSDictionary<NSKeyValueChangeKey,id> *)change
-                       context:(void *)context {
+- (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary<NSKeyValueChangeKey,id> *)change context:(void *)context {
     if (object == self.target &&
         [keyPath isEqualToString:self.keyPath] &&
         _valueChanged) {
@@ -69,11 +64,6 @@
             objc_setAssociatedObject(weak_self, key, nil, OBJC_ASSOCIATION_RETAIN);
         }];
     }];
-}
-
-- (GYSignal *)gy_deallocSignal {
-    NSAssert(NO, @"gy_deallocSignal not implemented yet!");
-    return nil;
 }
 
 @end
