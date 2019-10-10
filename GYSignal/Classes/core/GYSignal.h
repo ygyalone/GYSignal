@@ -9,6 +9,9 @@
 #import <Foundation/Foundation.h>
 #import "GYTuple.h"
 
+#define GYWeak(obj) __weak typeof(obj) weak_##obj = obj;
+#define GYStrong(obj) __strong typeof(weak_##obj) obj = weak_##obj;
+
 NS_ASSUME_NONNULL_BEGIN
 
 ///信号订阅者

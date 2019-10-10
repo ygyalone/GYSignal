@@ -323,14 +323,41 @@ textField.gy_textSignal;
 GYSignal<NSNumber *> *signal;
 ```
 
-
-
 ###  宏
 
 如果使用 Objective-C 语言调用 `gy_signalForKeyPath` 方法。推荐使用 `GYObserve` 宏。使用该宏除了有智能提示还能够提供编译期的检查，防止 `KeyPath` 写错的问题。
 
 ```objc
 GYObserve(self, aString);
+```
+
+为了防止循环引用导致的内存泄漏，我们经常要对对象进行weak或者strong操作，工具提供了便利宏进行此类操作。
+
+```objc
+GYWeak(self)
+[GYObserve(self, num) subscribeValue:^(id  _Nullable value) {
+    GYStrong(self)
+    self.label.text = [value description];
+}];
+```
+
+### 双向绑定
+
+有时我们希望视图的内容和数据模型绑定，同时数据模型的内容也和视图绑定，这就是双向绑定了。
+
+但是双向绑定会导致一个触发循环的问题，因为视图的变化会触发数据模型的变化，反过来数据模型的变化会触发视图的变化，构成了一个死循环。
+
+目前解决这个问题的方法是打破这个循环：当我们订阅信号时使用 `diffrent` 操作包装成新的信号。因为只有不同的值才会触发值回调，因此打破了双向绑定的触发循环。
+
+```objc
+//其实只要有一个信号被 diffrent 即可
+[[GYObserve(self, num) diffrent] subscribeValue:^(id  _Nullable value) {
+    textField.text = [value description];
+}];
+    
+[[textField.gy_textSignal diffrent] subscribeValue:^(NSString * _Nullable value) {
+    self.num = [value integerValue];
+}];
 ```
 
 
